@@ -18,13 +18,13 @@
 
 % TO DO: add intro
 
-
-\section{Setup}
-\subsection{Generalized linear model}
+\section{Univariate generalized linear model}
+\subsection{General setup}
 Model:
 \begin{equation}
 	Y_n \sim \mathcal{F}(V_n) \hspace*{25pt} \text{where } \hspace*{5pt} V_n = X_n \beta
 \end{equation}
+where $Y_n$ and $V_n$ are scalars, $\mathcal{F}$ is some probability distribution, $X_n$ is a $[1 \times L]$ vector of observables, and $\beta$ is a $[L \times 1]$ vector of parameters to estimate.
 
 \begin{equation}
 \begin{aligned}
@@ -41,7 +41,8 @@ Model:
 \end{equation}
 where $\textbf{X}$ is a matrix of dimensions $[N \times K]$, $\beta$ is a vector of dimensions $[K \times 1]$, $\textbf{f}$, $\textbf{g}$ and $\textbf{h}$ are vectors of dimensions $[N \times 1]$, $\mathbbm{1}_Q$ is a vector of ones of dimension $[1 \times Q]$, and $\odot$ represents the Hadamard product (term-by-term multiplication).
 
-\subsection{Model 1: Linear model}
+\subsection{Examples}
+\subsubsection{Model 1: Linear model}
 Model:
 \begin{equation}
 	Y_n \sim N(V_n, \sigma^2)
@@ -64,7 +65,7 @@ The gradient is equal to zero when:
 \end{aligned}
 \end{equation}
 
-\subsection{Model 2: Poisson count model / Exponential duration model}
+\subsubsection{Model 2: Poisson count model / Exponential duration model}
 Model:
 \begin{equation}
 \begin{aligned}
@@ -109,9 +110,7 @@ Link function and derivatives:
 	Thus, only the constant $K_n^*$ is different.
 \end{itemize}
 
-
-
-\subsection{Model 3: Binomial logit / Logistic regression}
+\subsubsection{Model 3: Binomial logit / Logistic regression}
 Model:
 \begin{equation}
 \begin{aligned}
@@ -130,7 +129,8 @@ Link function and derivatives:
 \end{aligned} \right.
 \end{equation}
 
-\section{Estimation by Maximum Likelihood}
+
+\subsection{Estimation by Maximum Likelihood}
 Newton-Raphson:
 \begin{equation}
 	\beta^{(i+1)} \leftarrow \beta^{(i)} - \left[H(\beta)\right]^{-1} \nabla_{LL}(\beta)
@@ -144,7 +144,7 @@ Here are the things that need to be computed efficiently to estimate the model:
 	\item $\textbf{X}' \textbf{X} $ (special case of the previous line, where \textbf{h} is a column of ones.
 \end{itemize}
 
-\subsection{Case with two dimensions of variation}
+\subsubsection{Case with two dimensions of variation}
 The matrix of covariates $\textbf{X}$ is of dimensions $[N \times P]$. We consider the case when the data varies across two dimensions with subscripts $(i,j)$, such that the data is balanced in the sense that all combinations of ($i,j$) appear exactly once (in which case $N = I \times J$). Furthermore, some of the covariates $X$ vary only according to $i$ (and are constant across $j$), and some covariates vary only according to $j$ (and are constant across $i$). In that case, we can avoid the full expansion of matrix $X$ (which may require a large chunk of memory), and perform computations more efficiently.
 
 We split the matrix of covariates $X_{ij}$ into the three corresponding groups to obtain matrices $X^{(1)}_{ij}$, $X^{(2)}_{i}$, $X^{(3)}_{j}$, and we denote by $\beta^{(1)}, \beta^{(2)}, \beta^{(3)}$ the corresponding subvectors of $\beta$.
@@ -181,7 +181,7 @@ We split the matrix of covariates $X_{ij}$ into the three corresponding groups t
 
 \end{itemize}
 
-\subsection{Case with three dimensions of variation}
+\subsubsection{Case with three dimensions of variation}
 Similarly, let us now consider the case when the data varies across three dimensions with subscripts $(i,j,k)$, such that the data is balanced in the sense that all combinations of ($i,j,k$) appear exactly once (in which case $N = I \times J \times K$). We similarly split the matrix of covariates $X_{ijk}$ into six groups, as a function of their dimension(s) of variations, to obtain matrices $X^{(1)}_{ijk}$, $X^{(2)}_{ij}$, $X^{(3)}_{ik}$, $X^{(4)}_{jk}$, $X^{(5)}_{i}$, $X^{(6)}_{j}$, $X^{(7)}_{k}$, and we denote by $\beta^{(1)}, \beta^{(2)}, \beta^{(3)}, \beta^{(4)}, \beta^{(5)}, \beta^{(6)}, \beta^{(7)}$ the corresponding subvectors of $\beta$.
 
 \begin{itemize}
@@ -251,6 +251,80 @@ Similarly, let us now consider the case when the data varies across three dimens
 
 \end{itemize}
 
+
+\section{Multivariate generalized linear model}
+\subsection{Setup}
+Model:
+\begin{equation}
+	\textbf{Y}_n \sim \mathcal{F}(\textbf{V}_n) \hspace*{25pt} \text{where } \hspace*{5pt} \textbf{V}_n = \textbf{X}_n \beta
+\end{equation}
+where $\textbf{Y}_n$ and $\textbf{V}_n$ are vectors, $\mathcal{F}$ is some probability distribution, $\textbf{X}_n$ is a $[J \times L]$ vector of observables, and $\beta$ is a $[L \times 1]$ vector of parameters to estimate.
+
+
+\subsection{Multinomial Logit Model}
+\paragraph{Notations:}
+\begin{itemize}
+	\item $\textbf{Y}_n$ is a $[J \times 1]$ vector such that $Y_{nj} \in \{0,1\}$ for all $j$
+	\item $M_n = \sum_j \textbf{Y}_{nj}$ is the number of Multinomial trials
+	\item $\textbf{X}_n$ is a $[J \times L]$ matrix of covariates
+	\item $\beta$ is a $[L \times 1]$ matrix of parameters
+	\item $\textbf{V}_{n}$ is a $[J \times 1]$ vector of utilities that defines outcome probabilities $\textbf{p}_n$
+	\item $\textbf{p}_n$ is a $[J \times 1]$ vector of probabilities such that $\sum_j p_{nj} = 1$ and $0 \le p_{nj} \le 1$ for all $j$
+	\item $\textbf{y}$ is a $[NJ \times 1]$ vector that stacks up all values $y_{nj}$
+	\item $\textbf{p}$ is a $[NJ \times 1]$ vector that stacks up all values $p_{nj}$
+	\item $\textbf{logp}$ is a $[NJ \times 1]$ vector that stacks up all values $\log(p_{nj})$
+	\item $\textbf{M}$ is a $[N \times 1]$ vector that collects the values $M_n$
+	\item $\tilde{\textbf{M}}$ is a $[NJ \times 1]$ vector that repeats the values $M_n$, such that $\tilde{M}_{nj} = M_n$ for all $j$
+	\item $\textbf{A}$ is a $[N \times L]$ matrix such that $A_{nl} = \sum_j p_{nj} X_{njl}$
+\end{itemize}
+
+\paragraph{Model:}
+\begin{equation}
+\begin{aligned}
+	& \textbf{Y}_n && \sim Multinomial(M_n, \textbf{p}_n) \\
+	& p_{nj} && = \exp(V_{nj}) \big/ \sum_k \exp(V_{nk}) \hspace*{5pt} \text{for all } j \\
+	& \textbf{V}_{n} && = \textbf{X}_n \beta
+\end{aligned}
+\end{equation}
+
+\paragraph{Log-likelihood: \\}
+\begin{equation}
+\begin{aligned}
+	& LL && = \sum_{j=1}^J y_{nj} \log(p_{nj}) + C = \boxed{ \textbf{y}' \textbf{logp} + C } \\
+	\text{where } \hspace*{5pt} & C && =\sum_n \left[ \log(M_n!) - \sum_{j=1}^J \log(y_{nj}!) \right]
+\end{aligned}
+\end{equation}
+
+\paragraph{Gradient of log-likelihood: \\}
+\begin{equation}
+\begin{aligned}
+	& \frac{\partial LL}{\partial \beta_l} && = \sum_n \sum_{j=1}^J X_{njl} (y_{nj} - M_n p_{nj})
+\implies & \nabla LL(\beta) && = \boxed{\textbf{X}' \left( \textbf{y} - \tilde{\textbf{M}} \odot \textbf{p} \right)}
+\end{aligned}
+\end{equation}
+where $\odot$ represents the Hadamard product (term-by-term multiplication).
+
+\paragraph{Hessian of log-likelihood: \\}
+\begin{equation}
+\begin{aligned}
+	& \frac{\partial^2 LL}{\partial \beta_l \partial \beta_{l'}} && = - \sum_{n,j} \tilde{M}_{nj} p_{nj} X_{njl} X_{njl'} + \sum_n M_n A_{nl} A_{nl'} \\
+	\text{where } \hspace*{5pt} & A_{nl} && =\sum_j p_{nj} X_{njl} \\
+ \implies	& \textbf{H}(\beta) && = \boxed{\textbf{X}' \left[ \textbf{X} \odot \left(\textbf{h} \cdot \mathbbm{1}_L \right) \right]  + \textbf{A}' \left[ \textbf{A}  \odot \left(\textbf{M} \cdot \mathbbm{1}_L \right) \right] }  \\ % TO DO
+  \text{where} \hspace*{5pt} & \textbf{h} && = - \tilde{\textbf{M}} \odot \textbf{p}
+\end{aligned}
+\end{equation}
+
+
+\subsection{Estimation by Maximum Likelihood}
+Computational trick:
+\begin{equation}
+\begin{aligned}
+	& \log(p_{nj}) && = V_{nj} - \log\left( \sum_k \exp(V_{nk}) \right) \\
+	&  && = V_{nj} - \bar{V}_n - \log\left( \sum_k \exp(V_{nk} - \bar{V}_n) \right) \\
+\text{where } \hspace*{5pt} & \bar{V}_n && = \underset{j}{\max} \hspace*{5pt} V_{nj}
+\end{aligned}
+\end{equation}
+This trick avoids overflow issues that arise when computing the exponential of large values.
 
 \end{document}
 
