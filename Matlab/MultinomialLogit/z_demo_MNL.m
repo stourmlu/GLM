@@ -40,11 +40,10 @@ addpath('../../../Optimization/Matlab');
 obj = @(beta_val) loglikelihood_MNL(Y, X, M, M_rep, nn_vec, beta_val, LL_constant, true);
 beta0 = zeros(L, 1);
 tic
-[beta_star, fval] = Newton_Raphson(obj, beta0, 1e-6, 2000);
+[beta_star, LL_star, LL_grad, FisherInfo] = Newton_Raphson(obj, beta0, 1e-6, 2000);
 toc
 
 % Compute std. errors
-[~,~,FisherInfo] = loglikelihood_MNL(Y, X, M, M_rep, nn_vec, beta_star, LL_constant, true);
 beta_ses = sqrt(diag(inv(FisherInfo)));
 
 disp(table(beta_true, beta_star, beta_ses));
