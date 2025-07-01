@@ -204,7 +204,7 @@ Similarly, let us now consider the case when the data varies across three dimens
 		& \nabla LL^{(6)} && = \sum_{j} \left[ \sum_{k} \sum_{i} g_{ijk} \right] X^{(6)}_{j}		&& = \sum_{j} g^{(6)}_{j} X^{(6)}_{j}			&& \text{where} && g^{(6)}_{j} && = \sum_{i,k} g_{ijk}  \\		& \nabla LL^{(7)} && = \sum_{k} \left[ \sum_{i} \sum_{j} g_{ijk} \right] X^{(7)}_{k}		&& = \sum_{k}  g^{(7)}_{k} X^{(7)}_{k}				&& \text{where} && g^{(7)}_{k} && = \sum_{i,j} g_{ijk}  \\
 	\end{aligned}
 	\end{equation}
-	Thus, we first compute $g^{(2)}_{ij}$, $g^{(3)}_{ik}$, $g^{(4)}_{jk}$, $g^{(5)}_{i}$, $g^{(6)}_{j}$, $g^{(7)}_{k}$. Then, we multiply them with the corresponding matrices $X^{(2)}_{ij}$, $X^{(3)}_{ik}$, $X^{(4)}_{jk}$, $X^{(5)}_{i}$, $X^{(6)}_{j}$, $X^{(7)}_{k}$. We combine all gradient sub-vectors together to obtain the gradient with respect to the full vector of parameters $\beta$. Following this process allows us to avoid the full expansion of $X$ at the $(i,j,k)-$ level.
+	Thus, we first compute $g^{(1)}_{ijk}$, $g^{(2)}_{ij}$, $g^{(3)}_{ik}$, $g^{(4)}_{jk}$, $g^{(5)}_{i}$, $g^{(6)}_{j}$, $g^{(7)}_{k}$. Then, we multiply them with the corresponding matrices $X^{(2)}_{ij}$, $X^{(3)}_{ik}$, $X^{(4)}_{jk}$, $X^{(5)}_{i}$, $X^{(6)}_{j}$, $X^{(7)}_{k}$. We combine all gradient sub-vectors together to obtain the gradient with respect to the full vector of parameters $\beta$. Following this process allows us to avoid the full expansion of $X$ at the $(i,j,k)-$ level.
 
 \item To compute $\textbf{X}' \left[ \textbf{X} \odot \left(\textbf{h} \cdot \mathbbm{1}_P \right) \right]$:
 \clearpage
