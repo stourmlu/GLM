@@ -56,10 +56,10 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim2(dims, Xparts, Y)
 	Xt_X_Y_parts = cell(NumParts, NumParts);
 	for ii = 1:NumParts
 		Xi            = Xparts{ii}.X;
-		NumXi         = dims.Xpart_2_NumX(ii); % TO DO
+		NumXi         = dims.Xpart_2_NumX(ii);
 		if isfield(Xparts{ii}, 'X_FEs')
 			X_FEs_i       = Xparts{ii}.X_FEs;
-			NumX_FEs_i    = dims.Xpart_2_NumX_FEs(ii); % TO DO
+			NumX_FEs_i    = dims.Xpart_2_NumX_FEs(ii);
 			Num_FE_vals_i = dims.Xpart_2_Num_FE_vals{ii};
 		else
 			X_FEs_i       = zeros(dims.dims1{ii}, 0);
@@ -92,11 +92,11 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim2(dims, Xparts, Y)
 			%%%% Case where ii != jj
 			else
 				Xj            = Xparts{jj}.X;
-				NumXj         = dims.Xpart_2_NumX(jj); % TO DO
+				NumXj         = dims.Xpart_2_NumX(jj);
 				if isfield(Xparts{ii}, 'X_FEs')
 					X_FEs_j       = Xparts{jj}.X_FEs;
-					NumX_FEs_j    = dims.Xpart_2_NumX_FEs(jj); % TO DO
-					Num_FE_vals_j = dims.Xpart_2_Num_FE_vals{jj}; % TO DO
+					NumX_FEs_j    = dims.Xpart_2_NumX_FEs(jj);
+					Num_FE_vals_j = dims.Xpart_2_Num_FE_vals{jj};
 				else
 					X_FEs_j       = zeros(dims.dims1{jj}, 0);
 					NumX_FEs_j    = 0;
