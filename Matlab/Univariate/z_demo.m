@@ -116,9 +116,9 @@ end
 
 %%%%% dim3 %%%%%
 if dimType == 3
-	T = 300;
-	K1 = 200;
-	K2 = 200;
+	T = 40;
+	K1 = 45;
+	K2 = 50;
 	NumObs = T*K1*K2;
 	
 	Xparts = cell(7,1);
@@ -204,6 +204,68 @@ if dimType == 3
 	data2.X = X;
 	clear X Xpp X_FE_pp Xdummies_ee;
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% general %%%%%
+if dimType == 0
+	NumObs = 10000;
+	
+	Xparts = cell(3,1);
+	NumObs_pp = 200;
+	Xparts{1}.X            = [ones(NumObs_pp, 1) normrnd(0,1,[NumObs_pp, 3])]; % NumObs_pp x 4
+	Xparts{1}.X_FEs        = zeros(NumObs_pp, 2);                            % NumObs_pp x NumX_FEs
+	Xparts{1}.NumX_FE_vals = [2 3];                                        % 1 x NumX_FEs
+	Xparts{1}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     NumObs_pp, 1)) * [1:2]';
+	Xparts{1}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], NumObs_pp, 1)) * [1:3]';
+	Xparts{1}.mapping = mnrnd(1, repmat(1/NumObs_pp*ones(1,NumObs_pp), NumObs, 1)) * [1:NumObs_pp]';
+	
+	
+	
+	NumObs_pp = 300;
+	Xparts{2}.X            = [normrnd(0,1,[NumObs_pp, 4])];                     % NumObs_pp    x 4
+	Xparts{2}.X_FEs        = zeros(NumObs_pp, 3);                               % NumObs_pp x NumX_FEs
+	Xparts{2}.NumX_FE_vals = [2 3 4];                                        % 1 x NumX_FEs
+	Xparts{2}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     NumObs_pp, 1)) * [1:2]';
+	Xparts{2}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], NumObs_pp, 1)) * [1:3]';
+	Xparts{2}.X_FEs(:,3)   = mnrnd(1,repmat([0.25 0.25 0.25 0.25], NumObs_pp, 1)) * [1:4]';
+	Xparts{2}.mapping = mnrnd(1, repmat(1/NumObs_pp*ones(1,NumObs_pp), NumObs, 1)) * [1:NumObs_pp]';
+	
+	NumObs_pp = 500;
+	Xparts{3}.X            = normrnd(0,1,[NumObs_pp, 5]);                       % NumObs_pp    x 4
+	Xparts{3}.X_FEs        = zeros(NumObs_pp, 2);                               % NumObs_pp x NumX_FEs
+	Xparts{3}.NumX_FE_vals = [5 2];                                        % 1 x NumX_FEs
+	Xparts{3}.X_FEs(:,1)   = mnrnd(1,repmat([0.2 0.2 0.2 0.2 0.2],     NumObs_pp, 1)) * [1:5]';
+	Xparts{3}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.5], NumObs_pp, 1)) * [1:2]';
+	Xparts{3}.mapping = mnrnd(1, repmat(1/NumObs_pp*ones(1,NumObs_pp), NumObs, 1)) * [1:NumObs_pp]';
+	
+	data.Xparts = Xparts;
+	data.dims = make_dims(data, 0);
+	
+	%%%%%%
+	%% For testing purposes: expand everything into one matrix X
+	X = zeros(data.dims.NumObs, 0);
+	for pp = 1:length(data.Xparts)
+		Xpp = data.Xparts{pp}.X;
+		X_FE_pp = data.Xparts{pp}.X_FEs;
+		dim1 = size(Xpp,1);
+		for ee = 1:size(X_FE_pp, 2)
+			NumVals = Xparts{pp}.NumX_FE_vals(ee);
+			Xdummies_ee = zeros(dim1, NumVals);
+			for ff = 1:NumVals
+				Xdummies_ee(:,ff) = double(X_FE_pp(:,ee) == ff);
+			end
+			Xdummies_ee = Xdummies_ee(:,2:end);
+			Xpp = [Xpp Xdummies_ee];
+		end
+		% Resize/repeat Xpp if necessary (depending on part pp)
+		Xpp = Xpp(data.Xparts{pp}.mapping,:);
+		
+		X = [X Xpp];
+	end
+	data2.X = X;
+	clear X Xpp X_FE_pp Xdummies_ee;
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

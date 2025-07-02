@@ -22,6 +22,18 @@ function [dims] = make_dims(data, dimType)
 		dims.NumFEvals2Keep{pp}      = sum(dims.Xpart_2_Num_FE_vals{pp}) - dims.Xpart_2_NumX_FEs(pp);
 		NumParams                    = NumParams + dims.Xpart_2_NumX(pp) + dims.NumFEvals2Keep{pp};
 	end
-	dims.NumObs = dims.dims1{1};
+	if dimType == 1 || dimType == 2 || dimType == 3
+		dims.NumObs = dims.dims1{1};
+	end
+	if dimType == 0
+		dims.NumObs = size(data.Xparts{1}.mapping, 1);
+	end
 	dims.NumParams = NumParams;
+	
+	if dimType == 0
+		dims.mappings = cell(dims.NumParts,1);
+		for pp = 1:dims.NumParts
+			dims.mappings{pp} = data.Xparts{pp}.mapping;
+		end
+	end
 end
