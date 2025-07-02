@@ -21,7 +21,11 @@ function [beta_star, LL_star, LL_grad, FisherInfo, beta_ses] = estimate_GLM(data
 	end
 	
 	%%% Apply Newton-Raphson algorithm
-	beta0 = zeros(NumParams,1);
+	if length(varargin) >= 2
+		beta0 = varargin{2};
+	else
+		beta0 = zeros(NumParams,1);	
+	end
 	%%%%%%%%%%%%%%%
 	[beta_star, LL_star, LL_grad, FisherInfo] = Newton_Raphson(obj, beta0, 1e-8, 2000, 1, true);
 	%%%%%%%%%%%%%%%
