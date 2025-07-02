@@ -9,7 +9,7 @@ addpath('efficient_computation/dim3');
 addpath('efficient_computation/general');
 
 %%% GENERATE X
-dimType = 1;
+dimType = 3;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% dim1 %%%%%
@@ -51,22 +51,22 @@ end
 
 %%%%% dim2 %%%%%
 if dimType == 2
-	T = 1000;
-	K = 1000;
+	T = 100;
+	K = 100;
 	NumObs = T*K;
 	
 	Xparts = cell(3,1);
 	Xparts{1}.X = normrnd(0,1,[T*K, 3]);    % (T*K) x 3
+%%%
+%	Xparts{1}.X_FEs        = zeros(T*K, 0); % (T*K) x NumX_FEs
+%	Xparts{1}.NumX_FE_vals = [];    % 1 x NumX_FEs
 	%%%
-	Xparts{1}.X_FEs        = zeros(T*K, 0); % (T*K) x NumX_FEs
-	Xparts{1}.NumX_FE_vals = [];    % 1 x NumX_FEs
-	%%%
-	%Xparts{1}.X_FEs        = zeros(T*K, 3); % (T*K) x NumX_FEs
-	%Xparts{1}.NumX_FE_vals = [2 3 4];    % 1 x NumX_FEs
-	%Xparts{1}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],         T*K, 1)) * [1:2]';
-	%Xparts{1}.X_FEs(:,2)   = mnrnd(1,repmat([0.4 0.3 0.3],     T*K, 1)) * [1:3]';
-	%Xparts{1}.X_FEs(:,3)   = mnrnd(1,repmat([0.3 0.3 0.2 0.2], T*K, 1)) * [1:4]';
-	%%%
+	Xparts{1}.X_FEs        = zeros(T*K, 3); % (T*K) x NumX_FEs
+	Xparts{1}.NumX_FE_vals = [2 3 4];    % 1 x NumX_FEs
+	Xparts{1}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],         T*K, 1)) * [1:2]';
+	Xparts{1}.X_FEs(:,2)   = mnrnd(1,repmat([0.4 0.3 0.3],     T*K, 1)) * [1:3]';
+	Xparts{1}.X_FEs(:,3)   = mnrnd(1,repmat([0.3 0.3 0.2 0.2], T*K, 1)) * [1:4]';
+%%%
 	
 	Xparts{2}.X            = [ones(T, 1) normrnd(0,1,[T, 3])]; % T x 4
 	Xparts{2}.X_FEs        = zeros(T, 2);                      % T x NumX_FEs
@@ -116,89 +116,53 @@ end
 
 %%%%% dim3 %%%%%
 if dimType == 3
-	T = 100;
-	K1 = 100;
-	K2 = 100;
+	T = 300;
+	K1 = 200;
+	K2 = 200;
 	NumObs = T*K1*K2;
 	
 	Xparts = cell(7,1);
 	Xparts{1}.X            = [ones(T*K1*K2, 1) normrnd(0,1,[T*K1*K2, 3])]; % (T*K1*K2) x 3
-	%%%
-	Xparts{1}.X_FEs        = zeros(T*K1*K2, 0);                            % (T*K1*K2) x NumX_FEs
-	Xparts{1}.NumX_FE_vals = [];                                           % 1 x NumX_FEs
-	%%%
-	%Xparts{1}.X_FEs        = zeros(T*K1*K2, 2);                            % (T*K1*K2) x NumX_FEs
-	%Xparts{1}.NumX_FE_vals = [2 3];                                        % 1 x NumX_FEs
-	%Xparts{1}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     T*K, 1)) * [1:2]';
-	%Xparts{1}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], T*K, 1)) * [1:3]';
-	%%%
+	Xparts{1}.X_FEs        = zeros(T*K1*K2, 2);                            % (T*K1*K2) x NumX_FEs
+	Xparts{1}.NumX_FE_vals = [2 3];                                        % 1 x NumX_FEs
+	Xparts{1}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     T*K1*K2, 1)) * [1:2]';
+	Xparts{1}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], T*K1*K2, 1)) * [1:3]';
 	
 	Xparts{2}.X            = [normrnd(0,1,[T*K1, 4])];                     % (T*K1)    x 4
-	%%%
-	Xparts{2}.X_FEs        = zeros(T*K1, 0);                               % (T*K1)    x NumX_FEs
-	Xparts{2}.NumX_FE_vals = [];                                           % 1 x NumX_FEs
-	%%%
-	%Xparts{2}.X_FEs        = zeros(T*K1, 2);                               % (T*K1) x NumX_FEs
-	%Xparts{2}.NumX_FE_vals = [2 3];                                        % 1 x NumX_FEs
-	%Xparts{2}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     T*K1, 1)) * [1:2]';
-	%Xparts{2}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], T*K1, 1)) * [1:3]';
-	%%%
+	Xparts{2}.X_FEs        = zeros(T*K1, 3);                               % (T*K1) x NumX_FEs
+	Xparts{2}.NumX_FE_vals = [2 3 4];                                        % 1 x NumX_FEs
+	Xparts{2}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     T*K1, 1)) * [1:2]';
+	Xparts{2}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], T*K1, 1)) * [1:3]';
+	Xparts{2}.X_FEs(:,3)   = mnrnd(1,repmat([0.25 0.25 0.25 0.25], T*K1, 1)) * [1:4]';
 	
 	Xparts{3}.X            = normrnd(0,1,[T*K2, 5]);                       % (T*K2)    x 4
-	%%%
-	Xparts{3}.X_FEs        = zeros(T*K2, 0);                               % (T*K2)    x NumX_FEs
-	Xparts{3}.NumX_FE_vals = [];                                           % 1 x NumX_FEs
-	%%%
-	%Xparts{3}.X_FEs        = zeros(T*K2, 2);                               % (T*K2) x NumX_FEs
-	%Xparts{3}.NumX_FE_vals = [2 3];                                        % 1 x NumX_FEs
-	%Xparts{3}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     T*K2, 1)) * [1:2]';
-	%Xparts{3}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], T*K2, 1)) * [1:3]';
-	%%%
+	Xparts{3}.X_FEs        = zeros(T*K2, 2);                               % (T*K2) x NumX_FEs
+	Xparts{3}.NumX_FE_vals = [5 2];                                        % 1 x NumX_FEs
+	Xparts{3}.X_FEs(:,1)   = mnrnd(1,repmat([0.2 0.2 0.2 0.2 0.2],     T*K2, 1)) * [1:5]';
+	Xparts{3}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.5], T*K2, 1)) * [1:2]';
 	
 	Xparts{4}.X            = normrnd(0,1,[K1*K2, 6]);                      % (K1*K2)   x 4
-	%%%
-	Xparts{4}.X_FEs        = zeros(K1*K2, 0);                              % (K1*K2)   x NumX_FEs
-	Xparts{4}.NumX_FE_vals = [];                                           % 1 x NumX_FEs
-	%%%
-	%Xparts{4}.X_FEs        = zeros(K1*K2, 2);                               % (K1*K2) x NumX_FEs
-	%Xparts{4}.NumX_FE_vals = [2 3];                                         % 1 x NumX_FEs
-	%Xparts{4}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     K1*K2, 1)) * [1:2]';
-	%Xparts{4}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], K1*K2, 1)) * [1:3]';
-	%%%
+	Xparts{4}.X_FEs        = zeros(K1*K2, 2);                               % (K1*K2) x NumX_FEs
+	Xparts{4}.NumX_FE_vals = [4 5];                                         % 1 x NumX_FEs
+	Xparts{4}.X_FEs(:,1)   = mnrnd(1,repmat([0.25 0.25 0.25 0.25],     K1*K2, 1)) * [1:4]';
+	Xparts{4}.X_FEs(:,2)   = mnrnd(1,repmat([0.2 0.2 0.2 0.2 0.2], K1*K2, 1)) * [1:5]';
 	
 	Xparts{5}.X            = normrnd(0,1,[T, 7]);                          % T         x 4
-	%%%
-	Xparts{5}.X_FEs        = zeros(T, 0);                                  % T         x NumX_FEs
-	Xparts{5}.NumX_FE_vals = [];                                           % 1 x NumX_FEs
-	%%%
-	%Xparts{5}.X_FEs        = zeros(T, 2);                                  % T x NumX_FEs
-	%Xparts{5}.NumX_FE_vals = [2 3];                                        % 1 x NumX_FEs
-	%Xparts{5}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     T, 1)) * [1:2]';
-	%Xparts{5}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], T, 1)) * [1:3]';
-	%%%
+	Xparts{5}.X_FEs        = zeros(T, 1);                                  % T x NumX_FEs
+	Xparts{5}.NumX_FE_vals = [2];                                        % 1 x NumX_FEs
+	Xparts{5}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     T, 1)) * [1:2]';
 	
 	Xparts{6}.X            = normrnd(0,1,[K1, 8]);                         % K1        x 4
-	%%%
-	Xparts{6}.X_FEs        = zeros(K1, 0);                                 % K1        x NumX_FEs
-	Xparts{6}.NumX_FE_vals = [];                                           % 1 x NumX_FEs
-	%%%
-	%Xparts{6}.X_FEs        = zeros(K1, 2);                                  % K1 x NumX_FEs
-	%Xparts{6}.NumX_FE_vals = [2 3];                                         % 1 x NumX_FEs
-	%Xparts{6}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     K1, 1)) * [1:2]';
-	%Xparts{6}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], K1, 1)) * [1:3]';
-	%%%
+	Xparts{6}.X_FEs        = zeros(K1, 1);                                  % K1 x NumX_FEs
+	Xparts{6}.NumX_FE_vals = [3];                                         % 1 x NumX_FEs
+	Xparts{6}.X_FEs(:,1)   = mnrnd(1,repmat([0.5 0.3 0.2], K1, 1)) * [1:3]';
 	
 	
 	Xparts{7}.X            = normrnd(0,1,[K2, 9]);                         % K2        x 4
-	%%%
-	Xparts{7}.X_FEs        = zeros(K2, 0);                                 % K2        x NumX_FEs
-	Xparts{7}.NumX_FE_vals = [];                                           % 1 x NumX_FEs
-	%%%
-%	Xparts{7}.X_FEs        = zeros(K2, 2);                                  % K2 x NumX_FEs
-%	Xparts{7}.NumX_FE_vals = [2 3];                                         % 1 x NumX_FEs
-%	Xparts{7}.X_FEs(:,1)   = mnrnd(1,repmat([0.6 0.4],     K2, 1)) * [1:2]';
-%	Xparts{7}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.3 0.2], K2, 1)) * [1:3]';
-	%%%
+	Xparts{7}.X_FEs        = zeros(K2, 2);                                  % K2 x NumX_FEs
+	Xparts{7}.NumX_FE_vals = [4 4];                                         % 1 x NumX_FEs
+	Xparts{7}.X_FEs(:,1)   = mnrnd(1,repmat([0.25 0.25 0.25 0.25],     K2, 1)) * [1:4]';
+	Xparts{7}.X_FEs(:,2)   = mnrnd(1,repmat([0.5 0.2 0.2 0.1], K2, 1)) * [1:4]';
 	
 	data.Xparts = Xparts;
 	data.dims = make_dims(data, 3);
