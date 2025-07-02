@@ -18,7 +18,7 @@ function [beta_hat, varargout] = estimate_OLS(data, varargin)
 	if length(varargin) >= 1
 		verbose = varargin{1};
 	else
-		verbose = false;
+		verbose = true;
 	end
 	
 	g = compute_Xt_Y(data, data.Y)';  % NumX x 1
@@ -72,7 +72,11 @@ function [beta_hat, varargout] = estimate_OLS(data, varargin)
 		varargout{7} = residuals;
 	end
 	
-	if verbose	
-		disp(table(beta_hat,std_errors, t_values, p_values));
+	if verbose
+		mytable = table(beta_hat,std_errors, t_values, p_values);
+		if isfield(data, 'Xnames')
+			mytable.Properties.RowNames = data.Xnames;
+		end
+		disp(mytable);
 	end
 end

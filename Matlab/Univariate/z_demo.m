@@ -24,7 +24,7 @@ if dimType == 1
 	
 	data.Xparts = Xparts;
 	data.dims = make_dims(data, 1);
-	
+	data.Xnames = make_Xnames(data);
 	
 	%%%%%
 	%% For testing purposes: expand everything into one matrix X
@@ -45,6 +45,7 @@ if dimType == 1
 		X = [X Xpp];
 	end
 	data2.X = X;
+	data2.Xnames = data.Xnames;
 	clear X Xpp X_FE_pp Xdummies_ee;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -81,6 +82,7 @@ if dimType == 2
 	
 	data.Xparts = Xparts;
 	data.dims = make_dims(data, 2);
+	data.Xnames = make_Xnames(data);
 	
 	%%%%%
 	%% For testing purposes: expand everything into one matrix X
@@ -109,6 +111,7 @@ if dimType == 2
 		X = [X Xpp];
 	end
 	data2.X = X;
+	data2.Xnames = data.Xnames;
 	clear X Xpp X_FE_pp Xdummies_ee;
 end
 
@@ -166,6 +169,7 @@ if dimType == 3
 	
 	data.Xparts = Xparts;
 	data.dims = make_dims(data, 3);
+	data.Xnames = make_Xnames(data);
 	
 	%%%%%%
 	%% For testing purposes: expand everything into one matrix X
@@ -202,6 +206,7 @@ if dimType == 3
 		X = [X Xpp];
 	end
 	data2.X = X;
+	data2.Xnames = data.Xnames;
 	clear X Xpp X_FE_pp Xdummies_ee;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -240,6 +245,7 @@ if dimType == 0
 	
 	data.Xparts = Xparts;
 	data.dims = make_dims(data, 0);
+	data.Xnames = make_Xnames(data);
 	
 	%%%%%%
 	%% For testing purposes: expand everything into one matrix X
@@ -263,6 +269,7 @@ if dimType == 0
 		X = [X Xpp];
 	end
 	data2.X = X;
+	data2.Xnames = data.Xnames;
 	clear X Xpp X_FE_pp Xdummies_ee;
 end
 
@@ -278,16 +285,16 @@ V = compute_Xbeta(data, beta_true);
 
 
 %%%%% LINEAR MODEL
-%data.Y = V + normrnd(0,0.5,[NumObs,1]);
-%tic
-%[beta_star] = estimate_OLS(data, true);
-%toc
-%
-%data2.Y = data.Y;
-%tic
-%[beta_star2] = estimate_OLS(data2);
-%toc
-%table(beta_true, beta_star, beta_star2)
+data.Y = V + normrnd(0,0.5,[NumObs,1]);
+tic
+[beta_star] = estimate_OLS(data, true);
+toc
+
+data2.Y = data.Y;
+tic
+[beta_star2] = estimate_OLS(data2);
+toc
+table(beta_true, beta_star, beta_star2)
 
 %%%%% POISSON
 %logLambdaOffset = -8 + 0.5*normrnd(0,1, [NumObs,1]);
