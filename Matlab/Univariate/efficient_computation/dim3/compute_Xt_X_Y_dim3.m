@@ -62,6 +62,23 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 	Ysum_tk1   = reshape(Ysum_tk1, [T*K1 1]);      % (T*K1) x 1
 	Ysum_tk2   = reshape(Ysum_tk2, [T*K2 1]);      % (T*K2) x 1
 	
+	%%%
+	tk1k2_2_tt_vec = reshape(repmat([1:T]', 1, K1, K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+	tk1k2_2_k1_vec = reshape(repmat([1:K1], T, 1,  K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+	tk1k2_2_k2_vec = reshape(repmat(reshape([1:K2], [1, 1, K2]), T, K1, 1), [T*K1*K2 1]); % (T*K1*K2) x 1
+	
+	tk1_2_tt_vec = reshape(repmat([1:T]', 1, K1), [T*K1 1]); % (T*K1) x 1
+	tk1_2_k1_vec = reshape(repmat([1:K1], T, 1),  [T*K1 1]); % (T*K1) x 1
+	
+	tk2_2_tt_vec = reshape(repmat([1:T]', 1, K2), [T*K2 1]); % (T*K2) x 1
+	tk2_2_k2_vec = reshape(repmat([1:K2], T, 1),  [T*K2 1]); % (T*K2) x 1
+	
+	k1k2_2_k1_vec = reshape(repmat([1:K1]', 1, K2), [K1*K2 1]); % (K1*K2) x 1
+	k1k2_2_k2_vec = reshape(repmat([1:K2], K1, 1),  [K1*K2 1]); % (K1*K2) x 1
+	%%%
+	
+	
+	
 	Xt_X_Y_parts = cell(NumParts, NumParts);
 	for ii = 1:NumParts
 		Xi            = Xparts{ii}.X;
@@ -132,7 +149,6 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 				XFE_YX    = cell(NumX_FEs_i,1);
 				XFE_Y_XFE = cell(NumX_FEs_i,NumX_FEs_j);
 				
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 				if ii == 1
 					XY_i = reshape(XY_i, [T K1 K2 NumXi]);
 				end
@@ -142,7 +158,37 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					XY = reshape(XY, [T*K1 NumXi]);              % (T*K1) x NumXi
 					XY_X = XY' * Xj;                             % NumXi x NumXj
 					
-					if NumX_FEs_i || NumX_FEs_j  > 0 ; error('Current code does not support FEs at this level'); end; % TO DO
+					% Compute XY_XFE
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % (T*K1) x 1
+						for aa = 1:NumXi
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY(:,aa), [NumX_FE_vals_jf 1])';
+						end
+					end
+					
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
+					% Compute XFE_YX
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_tt_vec tk1k2_2_k1_vec, X_FE_i], Y, [T K1 NumX_FE_vals_if]); % T x K1 x NumX_FE_vals_if
+						X_FE_i_Y = reshape(X_FE_i_Y, [T*K1 NumX_FE_vals_if]); % (T*K1) x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
+					
+					% Compute XFE_Y_XFE
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % (T*K1) x 1
+							X_FE_j = reshape(repmat(X_FE_j, [1 K2]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 1 && jj == 3 % (T*K1*K2) and (T*K2)
@@ -151,7 +197,37 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					XY = reshape(XY, [T*K2 NumXi]);              % (T*K2) x NumXi
 					XY_X = XY' * Xj;                             % NumXi x NumXj
 					
-					if NumX_FEs_i || NumX_FEs_j  > 0 ; error('Current code does not support FEs at this level'); end; % TO DO
+					% Compute XY_XFE
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % (T*K2) x 1
+						for aa = 1:NumXi
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY(:,aa), [NumX_FE_vals_jf 1])';
+						end
+					end
+					
+					% Compute XFE_YX
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_tt_vec tk1k2_2_k2_vec, X_FE_i], Y, [T K2 NumX_FE_vals_if]); % T x K2 x NumX_FE_vals_if
+						X_FE_i_Y = reshape(X_FE_i_Y, [T*K2 NumX_FE_vals_if]); % (T*K2) x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
+					
+					% Compute XFE_Y_XFE
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % (T*K2) x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [T 1 K2]), [1 K1 1]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 1 && jj == 4 % (T*K1*K2) and (K1*K2)
@@ -160,7 +236,37 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					XY = reshape(XY, [K1*K2 NumXi]);             % (K1*K2) x NumXi
 					XY_X = XY' * Xj;                             % NumXi x NumXj
 					
-					if NumX_FEs_i || NumX_FEs_j  > 0 ; error('Current code does not support FEs at this level'); end; % TO DO
+					% Compute XY_XFE
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % (K1*K2) x 1
+						for aa = 1:NumXi
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY(:,aa), [NumX_FE_vals_jf 1])';
+						end
+					end
+					
+					% Compute XFE_YX
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_k1_vec tk1k2_2_k2_vec, X_FE_i], Y, [K1 K2 NumX_FE_vals_if]); % K1 x K2 x NumX_FE_vals_if
+						X_FE_i_Y = reshape(X_FE_i_Y, [K1*K2 NumX_FE_vals_if]); % (K1*K2) x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
+					
+					% Compute XFE_Y_XFE
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % (K1*K2) x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [1 K1 K2]), [T 1 1]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 1 && jj == 5 % (T*K1*K2) and T
@@ -169,7 +275,36 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					XY = reshape(XY, [T NumXi]);                 % T x NumXi
 					XY_X = XY' * Xj;                             % NumXi x NumXj
 					
-					if NumX_FEs_i || NumX_FEs_j  > 0 ; error('Current code does not support FEs at this level'); end; % TO DO
+					% Compute XY_XFE
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % T x 1
+						for aa = 1:NumXi
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY(:,aa), [NumX_FE_vals_jf 1])';
+						end
+					end
+					
+					% Compute XFE_YX
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_tt_vec, X_FE_i], Y, [T NumX_FE_vals_if]); % T x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
+					
+					% Compute XFE_Y_XFE
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % T x 1
+							X_FE_j = reshape(repmat(X_FE_j, [1 K1 K2]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 1 && jj == 6 % (T*K1*K2) and K1
@@ -178,7 +313,36 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					XY = reshape(XY, [K1 NumXi]);                % K1 x NumXi
 					XY_X = XY' * Xj;                             % NumXi x NumXj
 					
-					if NumX_FEs_i || NumX_FEs_j  > 0 ; error('Current code does not support FEs at this level'); end; % TO DO
+					% Compute XY_XFE
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % K1 x 1
+						for aa = 1:NumXi
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY(:,aa), [NumX_FE_vals_jf 1])';
+						end
+					end
+					
+					% Compute XFE_YX
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_k1_vec, X_FE_i], Y, [K1 NumX_FE_vals_if]); % K1 x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
+										
+					% Compute XFE_Y_XFE
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % K1 x 1
+							X_FE_j = reshape(repmat(X_FE_j', [T 1 K2]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 1 && jj == 7 % (T*K1*K2) and K2
@@ -187,12 +351,40 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					XY = reshape(XY, [K2 NumXi]);                % K2 x NumXi
 					XY_X = XY' * Xj;                             % NumXi x NumXj
 					
-					if NumX_FEs_i || NumX_FEs_j  > 0 ; error('Current code does not support FEs at this level'); end; % TO DO
+					% Compute XY_XFE
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % K2 x 1
+						for aa = 1:NumXi
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY(:,aa), [NumX_FE_vals_jf 1])';
+						end
+					end
+					
+					% Compute XFE_YX
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_k2_vec, X_FE_i], Y, [K2 NumX_FE_vals_if]); % K2 x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end			
+					
+					% Compute XFE_Y_XFE
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % K2 x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [1 1 K2]), [T K1 1]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				if ii == 1
 					XY_i = reshape(XY_i, [T*K1*K2 NumXi]);
 				end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		
 				%%% One has two dims, the other has one dim that is included in the other
 				if ii == 2 && jj == 5 % (T*K1) and T
@@ -211,10 +403,24 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					end
 					
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at tt-k1 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						X_FE_i_Y = accumarray([tk1_2_tt_vec X_FE_i], Ysum_tk1, [T NumX_FE_vals_if]); % T x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % T x 1
+							X_FE_j = reshape(repmat(X_FE_j, [1 K1]), [T*K1 1]); % (T*K1) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Ysum_tk1, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
 				end
 				
 				if ii == 2 && jj == 6 % (T*K1) and K1
@@ -233,10 +439,24 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					end
 					
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at tt-k1 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						X_FE_i_Y = accumarray([tk1_2_k1_vec X_FE_i], Ysum_tk1, [K1 NumX_FE_vals_if]); % K1 x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % K1 x 1
+							X_FE_j = reshape(repmat(X_FE_j', [T 1]), [T*K1 1]); % (T*K1) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Ysum_tk1, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
 				end
 				
 				if ii == 3 && jj == 5 % (T*K2) and T
@@ -255,11 +475,24 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					end
 					
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at tt-k2 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K2) x 1
+						X_FE_i_Y = accumarray([tk2_2_tt_vec X_FE_i], Ysum_tk2, [T NumX_FE_vals_if]); % T x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
-					
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % T x 1
+							X_FE_j = reshape(repmat(X_FE_j, [1 K2]), [T*K2 1]); % (T*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Ysum_tk2, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
 				end
 				
 				if ii == 3 && jj == 7 % (T*K2) and K2
@@ -278,10 +511,24 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					end
 					
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at tt-k2 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K2) x 1
+						X_FE_i_Y = accumarray([tk2_2_k2_vec X_FE_i], Ysum_tk2, [K2 NumX_FE_vals_if]); % K2 x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % K2 x 1
+							X_FE_j = reshape(repmat(X_FE_j', [T 1]), [T*K2 1]); % (T*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Ysum_tk2, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
 				end
 
 				if ii == 4 && jj == 6 % (K1*K2) and K1
@@ -300,10 +547,24 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					end
 					
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at k1-k2 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (K1*K2) x 1
+						X_FE_i_Y = accumarray([k1k2_2_k1_vec X_FE_i], Ysum_k1_k2, [K1 NumX_FE_vals_if]); % K1 x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % K1 x 1
+							X_FE_j = reshape(repmat(X_FE_j, [1 K2]), [K1*K2 1]); % (K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Ysum_k1_k2, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
 				end
 				
 				if ii == 4 && jj == 7 % (K1*K2) and K2
@@ -322,12 +583,25 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					end
 					
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at k1-k2 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (K1*K2) x 1
+						X_FE_i_Y = accumarray([k1k2_2_k2_vec X_FE_i], Ysum_k1_k2, [K2 NumX_FE_vals_if]); % K2 x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % K2 x 1
+							X_FE_j = reshape(repmat(X_FE_j', [K1 1]), [K1*K2 1]); % (K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Ysum_k1_k2, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
 				end
-
 				
 				
 				%%% Both have one dimension, they are different
@@ -464,11 +738,29 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 						end
 					end
 					
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at k1-k2 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (K1*K2) x 1
+						X_FE_i = reshape(repmat(reshape(X_FE_i, [1 K1 K2]), T, 1, 1), [T*K1*K2 1]); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_tt_vec, X_FE_i], Y, [T NumX_FE_vals_if]); % T x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (K1*K2) x 1
+						X_FE_i = reshape(repmat(reshape(X_FE_i, [1 K1 K2]), T, 1, 1), [T*K1*K2 1]); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % T x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [T 1 1]), 1, K1, K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 2 && jj == 7 % (T*K1) and K2
@@ -485,11 +777,40 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 						end
 					end
 					
+					% Compute XY_XFE
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % K2 x 1
+						for aa = 1:NumXi
+							XY_a = sum(reshape(Xi(:,aa), [T K1]) .* Y, 1:2); % 1 x 1 x K2
+							XY_a = reshape(XY_a, [K2 1]); % K2 x 1
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY_a, [NumX_FE_vals_jf 1])';
+						end
+					end
+					
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at tt-k1 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						X_FE_i = reshape(repmat(X_FE_i, 1, K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_k2_vec, X_FE_i], Y, [K2 NumX_FE_vals_if]); % K2 x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						X_FE_i = reshape(repmat(X_FE_i, 1, K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % K2 x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [1 1 K2]), [T K1 1]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 3 && jj == 6 % (T*K2) and K1
@@ -509,11 +830,29 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 						end
 					end
 					
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at tt-k2 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K2) x 1
+						X_FE_i = reshape(repmat(reshape(X_FE_i, [T 1 K2]), 1, K1, 1), [T*K1*K2 1]); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_k1_vec, X_FE_i], Y, [K1 NumX_FE_vals_if]); % K1 x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K2) x 1
+						X_FE_i = reshape(repmat(reshape(X_FE_i, [T 1 K2]), 1, K1, 1), [T*K1*K2 1]); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % K1 x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [1 K1 1]), [T 1 K2]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 	
 				%%% Both have two dimensions, with one overlapping dim
@@ -527,13 +866,40 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					end
 					
 					% Compute XY_XFE
-					if NumX_FEs_j > 0; error('Current code does not support FEs at tt-k2 level'); end;
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % (T*K2) x 1
+						for aa = 1:NumXi
+							XY_a = sum(reshape(Xi(:,aa), [T K1]) .* Y, 2); % T x 1 x K2
+							XY_a = reshape(XY_a, [T*K2 1]); % (T*K2) x 1
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY_a, [NumX_FE_vals_jf 1])';
+						end
+					end
 					
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at tt-k1 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						X_FE_i = reshape(repmat(X_FE_i, 1, K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_tt_vec tk1k2_2_k2_vec, X_FE_i], Y, [T K2 NumX_FE_vals_if]); % T x K2 x NumX_FE_vals_if
+						X_FE_i_Y = reshape(X_FE_i_Y, [T*K2 NumX_FE_vals_if]); % (T*K2) x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0 and NumX_FEs_j > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						X_FE_i = reshape(repmat(X_FE_i, 1, K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % (T*K2) x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [T 1 K2]), [1 K1 1]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 2 && jj == 4 % (T*K1) and (K1*K2)
@@ -544,15 +910,42 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 						XY_b = reshape(XY_b, [1 T*K1]); % 1 x (T*K1)
 						XY_X(:,bb) = (XY_b * Xi)'; % NumXi x 1
 					end
-					
+				
 					% Compute XY_XFE
-					if NumX_FEs_j > 0; error('Current code does not support FEs at tt-k1 level'); end;
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % (K1*K2) x 1
+						for aa = 1:NumXi
+							XY_a = sum(reshape(Xi(:,aa), [T K1]) .* Y, 1); % 1 x K1 x K2
+							XY_a = reshape(XY_a, [K1*K2 1]); % (K1*K2) x 1
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY_a, [NumX_FE_vals_jf 1])';
+						end
+					end
 					
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at k1-k2 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						X_FE_i = reshape(repmat(X_FE_i, 1, K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_k1_vec tk1k2_2_k2_vec, X_FE_i], Y, [K1 K2 NumX_FE_vals_if]); % K1 x K2 x NumX_FE_vals_if
+						X_FE_i_Y = reshape(X_FE_i_Y, [K1*K2 NumX_FE_vals_if]); % (K1*K2) x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0 and NumX_FEs_j > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K1) x 1
+						X_FE_i = reshape(repmat(X_FE_i, 1, K2), [T*K1*K2 1]); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % (K1*K2) x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [1 K1 K2]), [T 1 1]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				if ii == 3 && jj == 4 % (T*K2) and (K1*K2)
@@ -565,13 +958,40 @@ function [Xt_X_Y, Y] = compute_Xt_X_Y2_dim3(dims, Xparts, Y)
 					end
 					
 					% Compute XY_XFE
-					if NumX_FEs_j > 0; error('Current code does not support FEs at tt-k2 level'); end;
+					for f2 = 1:NumX_FEs_j
+						NumX_FE_vals_jf = Num_FE_vals_j(f2);
+						X_FE_j = Xparts{jj}.X_FEs(:,f2); % (K1*K2) x 1
+						for aa = 1:NumXi
+							XY_a = sum(reshape(Xi(:,aa), [T 1 K2]) .* Y, 1); % 1 x K1 x K2
+							XY_a = reshape(XY_a, [K1*K2 1]); % (K1*K2) x 1
+							XY_XFE{f2}(aa,:) = accumarray(X_FE_j, XY_a, [NumX_FE_vals_jf 1])';
+						end
+					end
 					
+					Y  = reshape(Y,[T*K1*K2 1]); % (T*K1*K2) x 1
 					% Compute XFE_YX
-					if NumX_FEs_i > 0; error('Current code does not support FEs at k1-k2 level'); end;
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K2) x 1
+						X_FE_i = reshape(repmat(reshape(X_FE_i, [T 1 K2]), 1, K1, 1), [T*K1*K2 1]); % (T*K1*K2) x 1
+						X_FE_i_Y = accumarray([tk1k2_2_k1_vec tk1k2_2_k2_vec, X_FE_i], Y, [K1 K2 NumX_FE_vals_if]); % K1 x K2 x NumX_FE_vals_if
+						X_FE_i_Y = reshape(X_FE_i_Y, [K1*K2 NumX_FE_vals_if]); % (K1*K2) x NumX_FE_vals_if
+						XFE_YX{f1} = X_FE_i_Y'*Xj; % NumX_FE_vals_if x NumXj
+					end
 					
 					% Compute XFE_Y_XFE
-					%% Would require NumX_FEs_i > 0 and NumX_FEs_j > 0
+					for f1 = 1:NumX_FEs_i
+						NumX_FE_vals_if = Num_FE_vals_i(f1);
+						X_FE_i = Xparts{ii}.X_FEs(:,f1); % (T*K2) x 1
+						X_FE_i = reshape(repmat(reshape(X_FE_i, [T 1 K2]), 1, K1, 1), [T*K1*K2 1]); % (T*K1*K2) x 1
+						for f2 = 1:NumX_FEs_j
+							NumX_FE_vals_jf = Num_FE_vals_j(f2);
+							X_FE_j = Xparts{jj}.X_FEs(:,f2); % (K1*K2) x 1
+							X_FE_j = reshape(repmat(reshape(X_FE_j, [1 K1 K2]), [T 1 1]), [T*K1*K2 1]); % (T*K1*K2) x 1
+							XFE_Y_XFE{f1,f2} = accumarray([X_FE_i X_FE_j], Y, [NumX_FE_vals_if NumX_FE_vals_jf]);
+						end
+					end
+					Y  = reshape(Y,[T K1 K2]); % T x K1 x K2
 				end
 				
 				
