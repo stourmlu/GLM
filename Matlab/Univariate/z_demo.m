@@ -280,7 +280,7 @@ V = compute_Xbeta(data, beta_true);
 %%%%% LINEAR MODEL
 %data.Y = V + normrnd(0,0.5,[NumObs,1]);
 %tic
-%[beta_star] = estimate_OLS(data); % TO DO: add more stuff (t-values, p-values, etc.)
+%[beta_star] = estimate_OLS(data, true);
 %toc
 %
 %data2.Y = data.Y;
@@ -289,14 +289,13 @@ V = compute_Xbeta(data, beta_true);
 %toc
 %table(beta_true, beta_star, beta_star2)
 
-
 %%%%% POISSON
 %logLambdaOffset = -8 + 0.5*normrnd(0,1, [NumObs,1]);
 %lambda = exp(logLambdaOffset + V);
 %Y = poissrnd(lambda);
 %if max(Y) > 1e10
-%	disp(max(Y));
-%	error('Large values')
+%disp(max(Y));
+%error('Large values')
 %end
 %data.Y = Y;
 %[beta_star, LL_star, LL_grad, FisherInfo, beta_ses] = estimate_GLM(data, 'Poisson', logLambdaOffset);
