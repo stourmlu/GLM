@@ -61,11 +61,12 @@ function loglikelihood_MNL(Y, X, M, nn_vec, beta_val; LL_constant=nothing, M_rep
 	
 	### Trick to avoid taking the exponential of large values
 	Vmax = accumarray!(vec_N, nn_vec, V, "maximum") # N x 1
-	V = V - Vmax[nn_vec] # dim1 x 1
+	V -= Vmax[nn_vec] # dim1 x 1
 	
 	### Compute logp
 	tmp = log.(accumarray!(vec_N, nn_vec, exp.(V))) # N x 1
-	logp = V - tmp[nn_vec] # dim1 x 1
+	logp = V
+	logp -= tmp[nn_vec] # dim1 x 1
 	
 	### Compute LL
 	LL = Y'*logp + LL_constant # scalar

@@ -17,15 +17,11 @@ function [beta_star, LL_star, LL_grad, FisherInfo, beta_ses] = estimate_MNL(M, X
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	
 	M_rep = M(nn_vec);
-
 	LL_constant = sum(gammaln(M+1)) - sum(gammaln(Y+1));
 
 	obj = @(beta_val) loglikelihood_MNL(Y, X, M, M_rep, nn_vec, beta_val, LL_constant, true);
 	beta0 = zeros(size(X,2), 1);
-	tic
-	[beta_star, LL_star, LL_grad, FisherInfo] = Newton_Raphson(obj, beta0, 1e-6, 2000);
-	toc
 	
-	% Compute std. errors
+	[beta_star, LL_star, LL_grad, FisherInfo] = Newton_Raphson(obj, beta0, 1e-6, 2000);	
 	beta_ses = sqrt(diag(inv(FisherInfo)));
 end

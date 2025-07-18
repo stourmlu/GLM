@@ -5,7 +5,7 @@ include("../../../Optimization/Julia/Optimization.jl")
 using Random, Distributions
 
 L = 15
-N = 10000
+N = 4000
 J = 80
 dim1 = N*J
 
